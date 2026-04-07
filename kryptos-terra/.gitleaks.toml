@@ -1,0 +1,17 @@
+title = "Kryptos Terra - Configuracion Gitleaks"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "samj-api-token"
+description = "Detecta tokens de API de S.A.M.J. Global Services"
+regex = '''SAMJ-[A-Za-z0-9]{20,}'''
+tags = ["samj", "api", "token", "custom"]
+
+[allowlist]
+description = "Excluir archivo de configuracion para evitar falsos positivos"
+paths = [
+  '''(^|/)\.gitleaks\.toml$'''
+]
+
