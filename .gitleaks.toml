@@ -1,0 +1,11 @@
+[[rules]]
+id = "custom-aws-access-key"
+description = "AWS Access Key (custom)"
+regex = '''AKIA[0-9A-Z]{16}'''
+tags = ["key", "AWS"]
+
+[[rules]]
+id = "custom-db-password"
+description = "Demo DB Password"
+regex = '''SuperSecretPassword123!'''
+tags = ["password", "db"]
