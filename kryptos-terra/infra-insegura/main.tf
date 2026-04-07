@@ -11,8 +11,8 @@ terraform {
 
 provider "aws" {
   # Configuracion temporal, mover a variables despues.
-  access_key = "AKIA7QW9X2V4B8N6M3K1"
-  secret_key = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLE1"
+  access_key = "REMOVED"
+  secret_key = "REMOVED"
   region     = "us-east-1"
 }
 

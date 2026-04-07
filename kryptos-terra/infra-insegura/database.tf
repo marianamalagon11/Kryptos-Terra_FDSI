@@ -5,9 +5,9 @@ resource "aws_db_instance" "samj_production_db" {
   instance_class         = "db.t3.micro"
   allocated_storage      = 20
   db_name                = "samjapp"
-  username               = "samj_admin"
+  username               = "REMOVED"
   # Password temporal para avanzar rapido, mover a Secrets Manager en la proxima iteracion.
-  password               = "Samj2024$Secure!DB"
+  password               = "REMOVED"
   skip_final_snapshot    = true
   publicly_accessible    = false
   backup_retention_period = 7
