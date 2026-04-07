@@ -1,179 +1,216 @@
-# Explicacion de la Fase 1 - Kryptos Terra
+# Explicacion de la Fase 2 - Kryptos Terra
 
 ## Checklist de esta entrega
 
-- [x] Documentar todo lo implementado para la fase 1.
-- [x] Explicar paso a paso que hace cada parte del demo.
-- [x] Conectar cada accion con el objetivo academico de la fase 1.
-- [x] Incluir guion practico de que decir y que hacer en video.
-- [x] Dejar comandos de PowerShell listos para copiar y ejecutar.
+- [x] Objetivo de remediacion de la fase 2.
+- [x] Guion de video: que decir y que mostrar en cada escena.
+- [x] Comandos PowerShell listos para ejecutar en orden.
+- [x] Evidencias tecnicas que debes ensenar en camara.
+- [x] Cierre academico de mitigacion y siguientes pasos.
 
-## 1) Que se hizo en el proyecto
+## 1) Objetivo de la fase 2
 
-En esta fase se preparo un escenario **intencionalmente inseguro** para demostrar una falla comun en IaC:
-**poner secretos directo en Terraform y luego creer que borrarlos en otro commit ya resuelve el problema**.
+En esta fase se implementa la **remediacion** del riesgo de secretos en IaC para S.A.M.J. Global Services.
 
-Se crearon estos componentes:
+Resultado que debes demostrar:
 
-- `kryptos-terra/infra-insegura/main.tf`
-  - Proveedor AWS con `access_key` y `secret_key` hardcodeadas (falsas, formato realista).
-  - Region `us-east-1`.
-  - Recurso EC2 `t3.micro` con tags de S.A.M.J. Global Services en `production`.
+1. La infraestructura segura (`infra-segura`) ya no contiene secretos hardcodeados.
+2. Los valores sensibles se inyectan por variables locales/no versionadas o gestor de secretos.
+3. Se agregan controles preventivos en local (pre-commit) y en CI (GitHub Actions con Gitleaks).
+4. Se valida con escaneo de Gitleaks que el estado actual queda sin fugas.
 
-- `kryptos-terra/infra-insegura/database.tf`
-  - Recurso RDS MySQL `db.t3.micro`.
-  - Usuario y password hardcodeados en el codigo.
-  - Tags de la empresa y ambiente productivo.
+## 2) Que implementa esta fase
 
-- `kryptos-terra/infra-insegura/storage.tf`
-  - Bucket S3 `samj-global-backups-prod`.
-  - Token API ficticio con patron `SAMJ-...` para deteccion personalizada futura.
+Archivos que debes mencionar en el video:
 
-- `kryptos-terra/.gitleaks.toml`
-  - Hereda reglas por defecto de Gitleaks con `extend`.
-  - Agrega regla personalizada `samj-api-token` para detectar tokens `SAMJ-`.
-  - Incluye `allowlist` para excluir el propio `.gitleaks.toml` y evitar falsos positivos.
-
-Adicionalmente, se dejo estructura base para fases siguientes:
-
-- `kryptos-terra/infra-segura/*`
-- `kryptos-terra/vault/setup-vault.sh`
-- `kryptos-terra/.github/workflows/secret-scanner.yml`
+- `kryptos-terra/infra-segura/main.tf`
+  - Proveedor AWS sin `access_key` ni `secret_key` hardcodeadas.
+  - Uso de variable `aws_region`.
+- `kryptos-terra/infra-segura/database.tf`
+  - RDS con `username` y `password` por variables.
+  - `db_admin_password` marcada como `sensitive = true`.
+- `kryptos-terra/infra-segura/storage.tf`
+  - Token de backups como variable sensible (`backup_api_token`).
 - `kryptos-terra/.pre-commit-config.yaml`
-- `kryptos-terra/README.md`
+  - Hook local de Gitleaks antes de commit.
+- `kryptos-terra/.github/workflows/secret-scanner.yml`
+  - Escaneo automatico en push/PR con Gitleaks.
 
-## 2) Por que esto es exactamente la Fase 1
+## 3) Guion para video (paso a paso)
 
-La fase 1 no busca resolver el problema; busca **mostrar evidencia del problema**.
-
-La idea pedagogica es:
-
-1. El desarrollador comete el error (secreto en codigo).
-2. Lo corrige superficialmente en un commit posterior.
-3. Se demuestra que Git conserva el historial completo.
-4. Gitleaks confirma que los secretos siguen detectables en commits anteriores.
-
-Con esto demuestras el mensaje central de la fase:
-**"Borrar en la version actual no elimina la exposicion historica"**.
-
-## 3) Guion para el video: que decir y que hacer
-
-## Escena A - Contexto (30-45 segundos)
+## Escena A - Apertura de fase 2 (20-30 segundos)
 
 **Que decir:**
 
-"Este es Kryptos Terra, un demo academico de seguridad en Infraestructura como Codigo para S.A.M.J. Global Services. En esta fase 1 vamos a mostrar una mala practica: credenciales hardcodeadas en Terraform y un falso arreglo que no limpia el historial de Git."
+"En esta fase 2 pasamos de evidencia a remediacion. El objetivo es eliminar hardcoding de secretos en Terraform y dejar controles automáticos para evitar reincidencias."
 
-**Que hacer:**
-
-- Mostrar el arbol del proyecto.
-- Entrar a `infra-insegura`.
+**Que mostrar:**
 
 ```powershell
 Set-Location "C:\Users\maria\Downloads\Kryptos-Terra_FDSI"
 Get-ChildItem .\kryptos-terra\
-Get-ChildItem .\kryptos-terra\infra-insegura\
+Get-ChildItem .\kryptos-terra\infra-segura\
 ```
 
-## Escena B - Evidencia del error inicial (1-2 minutos)
+## Escena B - Revisar IaC segura (1-2 minutos)
 
 **Que decir:**
 
-"Aqui vemos secretos en texto plano: claves de AWS, credenciales de base de datos y un token de API. Esto representa un error real de desarrollo rapido sin controles de seguridad."
+"Aqui se ve la diferencia: en `infra-segura` no hay credenciales en texto plano. Los datos sensibles se referencian mediante variables y marcamos sensibilidad en Terraform."
 
-**Que hacer:**
-
-- Abrir cada archivo y remarcar visualmente las lineas sensibles.
+**Que mostrar:**
 
 ```powershell
-Get-Content .\kryptos-terra\infra-insegura\main.tf
-Get-Content .\kryptos-terra\infra-insegura\database.tf
-Get-Content .\kryptos-terra\infra-insegura\storage.tf
+Get-Content .\kryptos-terra\infra-segura\main.tf
+Get-Content .\kryptos-terra\infra-segura\database.tf
+Get-Content .\kryptos-terra\infra-segura\storage.tf
 ```
 
-## Escena C - Primer commit inseguro (30-45 segundos)
+## Escena C - Crear archivo local de variables (no versionado) (45-60 segundos)
 
 **Que decir:**
 
-"Voy a registrar esta configuracion base tal como la subiria un desarrollador distraido."
+"Para la demo cargamos secretos falsos en un archivo local `terraform.auto.tfvars` que no debe subirse al repositorio."
 
-**Que hacer:**
+**Que mostrar:**
 
 ```powershell
-git add .\kryptos-terra\infra-insegura\main.tf
-git add .\kryptos-terra\infra-insegura\database.tf
-git add .\kryptos-terra\infra-insegura\storage.tf
-git commit -m "feat: add base infrastructure config for SAMJ Global Services"
+@"
+aws_region = "us-east-1"
+app_ami = "ami-0c02fb55956c7d316"
+db_admin_username = "<USUARIO_FAKE>"
+db_admin_password = "<PASSWORD_FAKE>"
+backup_api_token = "<TOKEN_FAKE>"
+"@ | Set-Content .\kryptos-terra\infra-segura\terraform.auto.tfvars
+
+Get-Content .\kryptos-terra\infra-segura\terraform.auto.tfvars
 ```
 
-## Escena D - Falso arreglo y segundo commit (1 minuto)
+> Nota para decir en camara: "Este archivo es local de demo y no se versiona".
+
+> Importante: si intentas hacer `git add .\kryptos-terra\infra-segura\terraform.auto.tfvars`, Git no lo va a tomar porque `*.tfvars` esta cubierto por `.gitignore`. Esto es intencional: ese archivo suele contener valores sensibles locales y no debe entrar al historial del repositorio.
+
+> Si quieres mostrar algo versionable, usa una plantilla como `terraform.auto.tfvars.example` o un archivo de ejemplo sin secretos.
+
+## Escena D - Validar seguridad con Gitleaks (impacto tecnico) (1 minuto)
 
 **Que decir:**
 
-"Ahora simulamos que el desarrollador descubre el error y borra las credenciales del estado actual. A simple vista parece resuelto."
+"Ahora validamos el estado actual del repositorio. Si la remediacion esta bien, Gitleaks no deberia encontrar secretos hardcodeados en la configuracion segura."
 
-**Que hacer:**
+**Que mostrar:**
 
 ```powershell
-(Get-Content .\kryptos-terra\infra-insegura\main.tf) -replace 'AKIA7QW9X2V4B8N6M3K1', 'REMOVED' -replace 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLE1', 'REMOVED' | Set-Content .\kryptos-terra\infra-insegura\main.tf
-(Get-Content .\kryptos-terra\infra-insegura\database.tf) -replace 'samj_admin', 'REMOVED' -replace 'Samj2024\$Secure!DB', 'REMOVED' | Set-Content .\kryptos-terra\infra-insegura\database.tf
-(Get-Content .\kryptos-terra\infra-insegura\storage.tf) -replace 'SAMJ-aB3xK9mP2nQ7rT1vW4yZ6cE8hJ0dL5fG', 'REMOVED' | Set-Content .\kryptos-terra\infra-insegura\storage.tf
-
-git add .\kryptos-terra\infra-insegura\main.tf
-git add .\kryptos-terra\infra-insegura\database.tf
-git add .\kryptos-terra\infra-insegura\storage.tf
-git commit -m "fix: remove hardcoded credentials from config files"
+.\gitleaks.exe detect --source . --config .\kryptos-terra\.gitleaks.toml --report-format json --report-path .\kryptos-terra\gitleaks-fase2-actual.json --verbose --redact
+Get-Content .\kryptos-terra\gitleaks-fase2-actual.json
 ```
 
-## Escena E - Historial y falsa sensacion de seguridad (30-45 segundos)
+## Escena E - Activar control preventivo local (pre-commit) (45-60 segundos)
 
 **Que decir:**
 
-"El codigo actual parece limpio, pero revisemos el historial: hay dos commits, y el primero contiene la exposicion."
+"Ademas del escaneo manual, dejamos una barrera preventiva: cada commit pasa por Gitleaks automaticamente."
 
-**Que hacer:**
+**Que mostrar:**
+
+```powershell
+python -m pip install pre-commit
+pre-commit install
+pre-commit run --all-files
+Get-Content .\kryptos-terra\.pre-commit-config.yaml
+```
+
+## Escena F - Mostrar control en CI (GitHub Actions) (30-45 segundos)
+
+**Que decir:**
+
+"En CI tambien queda habilitado el escaneo para push y pull request, de modo que la proteccion no dependa solo de la maquina local."
+
+**Que mostrar:**
+
+```powershell
+Get-Content .\kryptos-terra\.github\workflows\secret-scanner.yml
+```
+
+## Escena G - Commit de remediacion (30-45 segundos)
+
+**Que decir:**
+
+"Registro estos cambios como baseline de remediacion para la fase 2."
+
+**Que mostrar:**
+
+```powershell
+git add .\kryptos-terra\infra-segura\main.tf
+git add .\kryptos-terra\infra-segura\database.tf
+git add .\kryptos-terra\infra-segura\storage.tf
+git add .\kryptos-terra\.pre-commit-config.yaml
+git add .\kryptos-terra\.github\workflows\secret-scanner.yml
+git add .\kryptos-terra\explicacion.md
+git commit -m "feat: phase 2 remediation with secure iac and secret scanning controls"
+```
+
+## Escena H - (Opcional) Limpieza fuerte del historial de la rama demo (60-90 segundos)
+
+**Que decir:**
+
+"Si el historial antiguo de la rama conserva exposiciones, la mitigacion completa incluye reescritura controlada de la rama de demo."
+
+**Que mostrar:**
+
+```powershell
+git checkout Demo
+git checkout --orphan Demo-clean
+git add .
+git commit -m "chore: bootstrap secure baseline without leaked history"
+git branch -M Demo
+git push --force origin Demo
+```
+
+Despues valida:
 
 ```powershell
 git --no-pager log --oneline --decorate --graph -n 10
-Get-Content .\kryptos-terra\infra-insegura\main.tf
-Get-Content .\kryptos-terra\infra-insegura\database.tf
-Get-Content .\kryptos-terra\infra-insegura\storage.tf
+.\gitleaks.exe detect --source . --config .\kryptos-terra\.gitleaks.toml --log-opts="--all" --report-format json --report-path .\kryptos-terra\gitleaks-fase2-historial.json --verbose --redact
+Get-Content .\kryptos-terra\gitleaks-fase2-historial.json
 ```
 
-## Escena F - Momento de impacto con Gitleaks (1 minuto)
-
-**Que decir:**
-
-"Ahora ejecutamos Gitleaks sobre todo el historial de Git. Aunque hoy el archivo este limpio, el scanner va a encontrar secretos en commits previos."
-
-**Que hacer:**
+## 4) Bloque de comandos completos (corrida continua)
 
 ```powershell
-.\gitleaks.exe detect --source . --config .\kryptos-terra\.gitleaks.toml --log-opts="--all" --report-format json --report-path .\kryptos-terra\gitleaks-historial.json --verbose --redact
-Get-Content .\kryptos-terra\gitleaks-historial.json
+Set-Location "C:\Users\maria\Downloads\Kryptos-Terra_FDSI"
+
+Get-Content .\kryptos-terra\infra-segura\main.tf
+Get-Content .\kryptos-terra\infra-segura\database.tf
+Get-Content .\kryptos-terra\infra-segura\storage.tf
+
+@"
+aws_region = "us-east-1"
+app_ami = "ami-0c02fb55956c7d316"
+db_admin_username = "<USUARIO_FAKE>"
+db_admin_password = "<PASSWORD_FAKE>"
+backup_api_token = "<TOKEN_FAKE>"
+"@ | Set-Content .\kryptos-terra\infra-segura\terraform.auto.tfvars
+
+.\gitleaks.exe detect --source . --config .\kryptos-terra\.gitleaks.toml --report-format json --report-path .\kryptos-terra\gitleaks-fase2-actual.json --verbose --redact
+Get-Content .\kryptos-terra\gitleaks-fase2-actual.json
+
+python -m pip install pre-commit
+pre-commit install
+pre-commit run --all-files
+
+Get-Content .\kryptos-terra\.pre-commit-config.yaml
+Get-Content .\kryptos-terra\.github\workflows\secret-scanner.yml
+
+git add .\kryptos-terra\infra-segura\main.tf
+git add .\kryptos-terra\infra-segura\database.tf
+git add .\kryptos-terra\infra-segura\storage.tf
+git add .\kryptos-terra\.pre-commit-config.yaml
+git add .\kryptos-terra\.github\workflows\secret-scanner.yml
+git add .\kryptos-terra\explicacion.md
+git commit -m "feat: phase 2 remediation with secure iac and secret scanning controls"
 ```
 
-## Escena G - Cierre de fase (20-30 segundos)
+## 5) Mensaje de cierre para el video
 
-**Que decir:**
-
-"Conclusion de la fase 1: no basta con borrar secretos en un commit nuevo. Si llegaron a Git, quedan en el historial y siguen siendo detectables. En la siguiente fase veremos la remediacion: limpieza de historial, gestion segura de secretos y automatizacion preventiva en CI/CD."
-
-## 4) Mensaje academico clave que debes reforzar
-
-- El problema es de **ciclo de vida del secreto**, no solo de codigo actual.
-- Git es inmutable por diseño: cada commit preserva evidencia historica.
-- El escaneo debe incluir historial (`--log-opts="--all"`), no solo snapshot actual.
-- La seguridad en IaC requiere prevencion + deteccion + remediacion.
-
-## 5) Tip para que el video se vea profesional
-
-- Haz zoom en las lineas con secretos antes y despues del falso arreglo.
-- Deja visible el hash de commits cuando muestres `git log`.
-- Abre el reporte JSON de Gitleaks y resalta campos `RuleID`, `File`, `Commit`.
-- Cierra con una frase corta: "El secreto borrado del archivo no fue borrado de la historia".
-
-## 6) Nota tecnica rapida
-
-Si `gitleaks.exe` falla por incompatibilidad en Windows, reemplaza el binario por la version correcta para Windows x64 y ejecuta el mismo comando.
-
+"La fase 2 deja una postura de seguridad mas madura: IaC sin secretos hardcodeados, controles preventivos locales, validacion automatizada en CI y evidencia verificable de mitigacion. Con esto pasamos de detectar el problema a gobernarlo de forma repetible."
