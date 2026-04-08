@@ -1,5 +1,7 @@
 # Kryptos Terra — Protección de Secretos en Infraestructura como Código
 
+
+
 ## Descripción General
 
 **Kryptos Terra** es una propuesta de seguridad en tres capas diseñada para evitar la exposición de secretos en proyectos de Infraestructura como Código (IaC). El sistema demuestra cómo prevenir, detectar y eliminar completamente la presencia de credenciales dentro del código fuente y su historial.
