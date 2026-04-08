@@ -73,3 +73,4 @@ Get-Content .\kryptos-terra\gitleaks-historial.json
 
 El resultado esperado es que Gitleaks encuentre secretos en commits previos aunque los archivos actuales parezcan limpios.
 
+
